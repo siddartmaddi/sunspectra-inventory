@@ -133,6 +133,12 @@ access key: without it the script answers `unauthorized`.
 
 From now on, every change pushed to GitHub is published automatically.
 
+**Netlify works too** (the app currently runs on Netlify): sign up at
+[app.netlify.com](https://app.netlify.com) with GitHub → **Add new site → Import an existing project**
+→ pick the repo → branch `main`, build command empty, publish directory **`frontend`** → Deploy.
+Then open **Site configuration → Access & security → Visitor access** and make sure the site is
+**not** password-protected, otherwise people who aren't on your Netlify team can't open it.
+
 ### Step 9: Turn on the daily email
 
 1. In the app, open **Settings** and fill in:

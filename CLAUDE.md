@@ -35,7 +35,10 @@ Done:
 - Phase 4: `Counts.gs` (saveCount_ uses stock at end of count date, ADJUSTMENT "Count adjustment" with reference = count_id), `Import.gs` (dry run, per-row errors, unknown names, NameMap tab, batches of 300 from the browser, all-or-nothing per batch), `Reports.gs` (one getReport call). Screens: Counts, Import (handles `;` CSV and DD/MM/YYYY), Reports with CSV export. Full Spanish dictionary (test checks key parity). Sample data includes two counts.
 - README (non-developer setup: Sheet, pasting .gs files, ACCESS_KEY, deploy, triggers, config.js, Cloudflare Pages; troubleshooting; future ideas). `frontend/_headers` sets Cache-Control: no-cache.
 
-Next (not started, needs the client):
-- Real deployment on the client's Google account and Cloudflare (README steps 1-9).
+- Deployed (2026-10-28) on Siddart's Google account for now: Sheet + bound script created with clasp (`.clasp.json` is gitignored), web app URL in `frontend/config.js`. Site on Netlify: https://dainty-crepe-a910be.netlify.app/ (Cloudflare dashboard wouldn't load for Siddart).
+
+Next:
+- Siddart: turn off Netlify visitor protection, set App address + alert email in Settings, run installTriggers.
+- Handoff to the client's Google account (README "Moving the app to another Google account").
 - Replace estimated unit costs, lead times and batch sizes with real ones.
 - Future ideas are listed in README section 6.

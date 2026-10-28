@@ -93,6 +93,7 @@ th, td { padding: .55rem .6rem; border-bottom: 1px solid var(--border); text-ali
 th { font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); background: var(--surface-2); white-space: nowrap; }
 tbody tr:hover { background: #fbfaf7; }
 tr.inactive td { color: var(--text-muted); }
+td:first-child a { display: inline-block; min-width: 150px; }
 td.actions { white-space: nowrap; text-align: right; }
 .empty { padding: 2rem; text-align: center; color: var(--text-muted); }
 

@@ -135,6 +135,25 @@ export function confirmDialog(title, bodyHtml, confirmLabel) {
   });
 }
 
+// Status -> CSS class and translation key. Every badge shows text, never color alone.
+const STATUS_STYLE = {
+  'OUT': ['out', 'status.out'],
+  'REORDER NOW': ['reorder', 'status.reorder'],
+  'LOW': ['low', 'status.low'],
+  'OK': ['ok', 'status.ok'],
+  'INACTIVE': ['neutral', 'status.inactive']
+};
+export function statusBadge(status) {
+  const [cls, key] = STATUS_STYLE[status] || ['neutral', status];
+  return `<span class="badge ${cls}">${esc(t(key))}</span>`;
+}
+
+/** "12.5 days", "no recent sales" when there is no demand. */
+export function coverText(row) {
+  if (row.days_of_cover === null || row.days_of_cover === undefined) return t('fc.noRecentSales');
+  return t('fc.days', { n: num(row.days_of_cover, row.days_of_cover < 10 ? 1 : 0) });
+}
+
 /** Lookup helpers for bootstrap data. */
 export function productMap(boot) {
   return Object.fromEntries(boot.products.map((p) => [p.sku, p]));

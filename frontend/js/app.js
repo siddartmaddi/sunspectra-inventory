@@ -6,6 +6,7 @@ import * as dashboard from './dashboard.js';
 import * as products from './products.js';
 import * as movements from './movements.js';
 import * as settings from './settings.js';
+import * as reorder from './reorder.js';
 
 // Each route: URL pattern -> page module (with a render(container, params) function).
 const ROUTES = [
@@ -14,6 +15,7 @@ const ROUTES = [
   { path: /^\/history$/, page: movements, nav: 'history', params: () => ({ view: 'history' }) },
   { path: /^\/products$/, page: products, nav: 'products' },
   { path: /^\/products\/(.+)$/, page: products, nav: 'products', params: (m) => ({ sku: decodeURIComponent(m[1]) }) },
+  { path: /^\/reorder$/, page: reorder, nav: 'reorder' },
   { path: /^\/settings$/, page: settings, nav: 'settings' }
 ];
 
@@ -21,6 +23,7 @@ const NAV = [
   ['dashboard', '#/'],
   ['record', '#/record'],
   ['history', '#/history'],
+  ['reorder', '#/reorder'],
   ['products', '#/products'],
   ['settings', '#/settings']
 ];

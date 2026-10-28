@@ -20,6 +20,7 @@ Inventory web app for SunSpectra (reef-safe sunscreen and skincare, Costa Rica).
 - Node is not installed system-wide on Siddart's Mac: use `~/.local/node/current/bin/node` (Node 22 LTS).
 - Tests: `node --test` from the repo root (runs `tests/*.test.js`).
 - Backend files beyond the spec list: `Stock.gs` (bootstrap/summary), `Movements.gs`, `Products.gs` (products, suppliers, settings). `Code.gs` lists actions by function *name* because Apps Script loads files in order.
+- Forecast choices beyond the spec: days that *started* with zero stock are left out of the demand average (otherwise a sold-out product looks like it stopped selling); reversed movements and their reversals are ignored; the window ends yesterday; when status is OUT/REORDER NOW but the formula gives 0, suggest one minimum batch.
 - Typo ("spike") warning uses the 90th percentile of the last 100 movement sizes, separately for stock out and stock in (median was too small: most web sales are 1 unit).
 - Sample data: products from the client's list; movements simulated per product with fixed seeds (`SAMPLE_PROFILES` makes some out of stock, some about to run out, some slow movers). `clearSampleData()` removes rows with entered_by = "Sample data".
 
@@ -27,9 +28,9 @@ Inventory web app for SunSpectra (reef-safe sunscreen and skincare, Costa Rica).
 Done:
 - Phase 0: git, .gitignore, CLAUDE.md.
 - Phase 1: setup(), API with access key + LockService + CacheService, products add/edit/deactivate, multi-line movement form (negative-stock block, typo warning), history with filters/CSV/reverse, settings + suppliers page, dashboard with current stock. API tests in `tests/api.test.js`. Checked in the browser (desktop + 375px).
+- Phase 2: `backend/forecast.js` (weighted average with 21-day half-life, simple average under 30 days, low-data flag under 14, safety stock, reorder point, cover, stockout/reorder-by dates, suggested qty rounded to MOQ, status). 20 unit tests in `tests/forecast.test.js`. Dashboard KPIs + Needs attention + 2 charts, product page forecast with plain-words explanation + stock and forecast charts, Reorder page with editable qty and CSV.
 
 Next:
-- Phase 2: forecasting + tests, Needs attention, product charts, reorder plan.
 - Phase 3: daily email alerts + in-app banner.
 - Phase 4: stock counts, CSV import with name mapping, reports, Spanish.
 - Then: sample data loader polish, README.

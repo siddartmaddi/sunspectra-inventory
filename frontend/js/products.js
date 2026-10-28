@@ -3,7 +3,7 @@ import { getBootstrap, write, call } from './api.js';
 import { t } from './i18n.js';
 import {
   esc, money, num, fmtDate, toast, withLoading, errorBox, openDialog, closeDialog,
-  confirmDialog, summaryMap, optionsHtml
+  confirmDialog, summaryMap, optionsHtml, statusBadge, coverText, drawChart, addDays
 } from './utils.js';
 
 export const CATEGORIES = ['Sunscreen', 'Sunscreen Stick', 'Tinted Sunscreen', 'Lip Balm', 'Makeup', 'Skincare', 'Kit', 'Accessory'];
@@ -174,7 +174,7 @@ async function renderDetail(container, sku) {
     </div>
     <div class="card">
       <dl class="stats">
-        <div><dt>${esc(t('prod.currentStock'))}</dt><dd>${num(s.on_hand)} ${s.on_hand <= 0 ? '<span class="badge out">OUT</span>' : ''}</dd></div>
+        <div><dt>${esc(t('prod.currentStock'))}</dt><dd>${num(s.on_hand)} ${statusBadge(s.status)}</dd></div>
         <div><dt>${esc(t('prod.stockValue'))}</dt><dd>${money(s.value)}</dd></div>
         <div><dt>${esc(t('col.price'))}</dt><dd>${money(p.retail_price)}</dd></div>
         <div><dt>${esc(t('col.cost'))}</dt><dd>${money(p.unit_cost)}</dd></div>
@@ -198,5 +198,127 @@ async function renderDetail(container, sku) {
 
   container.querySelector('#edit-product').addEventListener('click', () =>
     openProductForm(p, boot, () => window.dispatchEvent(new HashChangeEvent('hashchange'))));
-  return { boot, detail, product: p };
+
+  if (p.active) container.querySelector('#detail-extra').innerHTML = forecastHtml(p, s, boot);
+  container.querySelector('#detail-extra').insertAdjacentHTML('beforeend', `
+    <div class="grid grid-2" style="margin-top:1rem">
+      <div class="card"><h2 style="margin-top:0">${esc(t('fc.stockChart'))}</h2><div class="chart-box"><canvas id="chart-stock"></canvas></div></div>
+      <div class="card"><h2 style="margin-top:0">${esc(t('fc.forecastChart'))}</h2><div class="chart-box"><canvas id="chart-forecast"></canvas></div></div>
+    </div>`);
+  requestAnimationFrame(() => {
+    drawStockChart(container.querySelector('#chart-stock'), detail.movements, detail.counts);
+    drawForecastChart(container.querySelector('#chart-forecast'), detail.movements, s, boot.today);
+  });
+}
+
+/** Forecast numbers plus a plain-words explanation of each one. */
+function forecastHtml(p, f, boot) {
+  const level = Math.round(Number(boot.settings.service_level) * 100);
+  const windowDays = Number(boot.settings.forecast_window_days) || 90;
+  const avg = num(f.avg_daily, 2);
+  const lines = [];
+  if (f.avg_daily > 0) {
+    lines.push(t(f.method === 'weighted' ? 'fc.howDemandWeighted' : 'fc.howDemandSimple', { avg, n: f.history_days }));
+  } else {
+    lines.push(t('fc.howDemandNone', { n: windowDays }));
+  }
+  if (String(boot.settings.include_samples_in_demand).toUpperCase() === 'TRUE') lines.push(t('fc.howSamples'));
+  if (f.stockout_days_skipped) lines.push(t('fc.howSkipped', { n: f.stockout_days_skipped }));
+  lines.push(f.safety_stock_source === 'override' ? t('fc.howSafetyOverride', { safety: num(f.safety_stock) })
+    : t('fc.howSafety', { safety: num(f.safety_stock), std: num(f.std_daily, 2), level, lead: f.lead_time_days, z: f.z }));
+  lines.push(f.reorder_point_source === 'override' ? t('fc.howReorderOverride', { rop: num(f.reorder_point) })
+    : t('fc.howReorder', { rop: num(f.reorder_point), avg, lead: f.lead_time_days, safety: num(f.safety_stock) }));
+  if (f.avg_daily > 0 && f.on_hand > 0) {
+    lines.push(t('fc.howCover', { onHand: num(f.on_hand), cover: coverText(f), stockout: fmtDate(f.stockout_date), reorderBy: fmtDate(f.reorder_by_date) }));
+  }
+  lines.push(f.suggested_qty > 0
+    ? t('fc.howSuggested', { qty: num(f.suggested_qty), lead: f.lead_time_days, target: p.target_cover_days || 60, moq: p.min_order_qty || 1 })
+    : t('fc.howSuggestedNone'));
+
+  return `<div class="card">
+    <h2 style="margin-top:0">${esc(t('fc.title'))} ${f.low_data ? `<span class="badge low">${esc(t('fc.lowData'))}</span>` : ''}</h2>
+    ${f.low_data ? `<p class="msg warn">${esc(t('fc.lowDataHint'))}</p>` : ''}
+    <dl class="stats">
+      <div><dt>${esc(t('fc.avgDaily'))}</dt><dd>${num(f.avg_daily, 2)}</dd></div>
+      <div><dt>${esc(t('fc.cover'))}</dt><dd>${esc(coverText(f))}</dd></div>
+      <div><dt>${esc(t('fc.stockout'))}</dt><dd>${f.on_hand > 0 ? fmtDate(f.stockout_date) : '–'}</dd></div>
+      <div><dt>${esc(t('fc.reorderBy'))}</dt><dd>${fmtDate(f.reorder_by_date)}</dd></div>
+      <div><dt>${esc(t('fc.safetyStock'))}</dt><dd>${num(f.safety_stock)}</dd></div>
+      <div><dt>${esc(t('fc.reorderPoint'))}</dt><dd>${num(f.reorder_point)}</dd></div>
+      <div><dt>${esc(t('fc.suggested'))}</dt><dd>${num(f.suggested_qty)}</dd></div>
+    </dl>
+    <h3>${esc(t('fc.howTitle'))}</h3>
+    <div class="explain">${lines.map((l) => `<p>${esc(l)}</p>`).join('')}</div>
+  </div>`;
+}
+
+/** Running stock total after each day that had movements, with physical counts as dots. */
+function drawStockChart(canvas, movements, counts) {
+  const byDate = new Map();
+  let running = 0;
+  movements.forEach((m) => { running += m.qty; byDate.set(m.date, running); });
+  drawChart(canvas, {
+    type: 'line',
+    data: {
+      datasets: [
+        { label: t('fc.stock'), data: [...byDate].map(([x, y]) => ({ x, y })), borderColor: '#0f766e', backgroundColor: '#0f766e', stepped: true, pointRadius: 0 },
+        { label: t('fc.counted'), type: 'scatter', data: counts.map((c) => ({ x: c.date, y: c.counted_qty })), backgroundColor: '#e8734a', pointRadius: 5 }
+      ]
+    },
+    options: {
+      maintainAspectRatio: false,
+      parsing: true,
+      scales: {
+        x: { type: 'category', labels: [...new Set([...byDate.keys(), ...counts.map((c) => c.date)])].sort(),
+          ticks: { callback(value) { return fmtDate(this.getLabelForValue(value)).replace(/\s\d{4}$/, ''); } } },
+        y: { beginAtZero: true }
+      },
+      plugins: { legend: { position: 'bottom' } }
+    }
+  });
+}
+
+/**
+ * Bars: units sold in each of the last 13 weeks. Line: stock today, going down at the
+ * average daily demand until it reaches 0 (or for 13 weeks if that's further away).
+ */
+function drawForecastChart(canvas, movements, f, today) {
+  const weeks = [];
+  for (let i = 12; i >= 0; i--) weeks.push(addDays(today, -7 * i - 6)); // week start dates
+  const sold = weeks.map((start) => {
+    const end = addDays(start, 7);
+    return movements.filter((m) => m.type === 'SALE' && m.date >= start && m.date < end && !m.reverses_id)
+      .reduce((sum, m) => sum - m.qty, 0);
+  });
+  // Reversals cancel sales, so subtract them from the week of the original sale.
+  const reversedIds = new Set(movements.filter((m) => m.reverses_id).map((m) => m.reverses_id));
+  movements.filter((m) => reversedIds.has(m.movement_id) && m.type === 'SALE').forEach((m) => {
+    const i = weeks.findIndex((start) => m.date >= start && m.date < addDays(start, 7));
+    if (i >= 0) sold[i] += m.qty;
+  });
+
+  const future = [];
+  const weeksAhead = f.avg_daily > 0 ? Math.min(26, Math.max(4, Math.ceil((f.days_of_cover || 0) / 7) + 1)) : 8;
+  for (let i = 1; i <= weeksAhead; i++) future.push(addDays(today, 7 * i));
+  const labels = [...weeks, ...future].map((d) => fmtDate(d).replace(/\s\d{4}$/, ''));
+  const projected = [...weeks.map((_, i) => (i === weeks.length - 1 ? f.on_hand : null)),
+    ...future.map((_, i) => Math.max(0, Math.round(f.on_hand - f.avg_daily * 7 * (i + 1))))];
+
+  drawChart(canvas, {
+    data: {
+      labels,
+      datasets: [
+        { type: 'bar', label: t('fc.weeklySales'), data: [...sold, ...future.map(() => null)], backgroundColor: '#e8734a', yAxisID: 'y' },
+        { type: 'line', label: t('fc.projected'), data: projected, borderColor: '#0f766e', borderDash: [6, 4], pointRadius: 2, spanGaps: false, yAxisID: 'y1' }
+      ]
+    },
+    options: {
+      maintainAspectRatio: false,
+      scales: {
+        y: { beginAtZero: true, position: 'left', title: { display: true, text: t('fc.weeklySales') } },
+        y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: t('fc.stock') } }
+      },
+      plugins: { legend: { position: 'bottom' } }
+    }
+  });
 }

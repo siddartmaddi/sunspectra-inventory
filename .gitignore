@@ -10,3 +10,6 @@ dev/data.json
 
 # Node (only used for tests and the local dev server; the site itself needs no npm)
 node_modules/
+
+# Claude desktop preview config (machine specific)
+.claude/

@@ -1,0 +1,3 @@
+# Files clasp must NOT upload to Apps Script.
+# forecast.js is the Node copy of Forecast.gs; uploading both would define everything twice.
+**/forecast.js

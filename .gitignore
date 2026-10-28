@@ -13,3 +13,6 @@ node_modules/
 
 # Claude desktop preview config (machine specific)
 .claude/
+
+# clasp project link (points at whoever's Google account deployed it)
+.clasp.json

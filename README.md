@@ -225,6 +225,19 @@ the header row or delete rows in Movements. To fix a movement, use **Reverse** i
 **The site shows an old version after an update**
 → Reload the page (Cmd+Shift+R on Mac, Ctrl+Shift+R on Windows).
 
+### Moving the app to another Google account (handoff)
+
+The app was first set up on a developer's Google account. To move it to the owner's account:
+
+1. While signed in as the **new owner**, open the Sheet (it must be shared with her) and choose
+   **File → Make a copy**. The copy includes all data and the Apps Script code.
+2. In the copy, open **Extensions → Apps Script** and do Steps 3, 5, 6 and 9 above (run `setup`,
+   set her own `ACCESS_KEY`, deploy a new web app, run `installTriggers`).
+3. Put the new Web app URL in `frontend/config.js` (Step 7) and commit. Cloudflare publishes it.
+4. Everyone logs in again with the new key. In the old Apps Script, archive the old deployment
+   (**Deploy → Manage deployments → Archive**) and delete its trigger, so the old copy stops
+   answering and stops emailing.
+
 ---
 
 ## 4. Making changes later
@@ -249,6 +262,12 @@ node --test                    # all tests (forecast math, API, alerts, translat
 node dev/server.js             # app at http://localhost:8787 with sample data, access key: dev-key
 node dev/server.js --reset     # same, starting again from fresh sample data
 ```
+
+Pushing the backend with [clasp](https://github.com/google/clasp) instead of copy-paste:
+`npm install -g @google/clasp`, `clasp login`, then from the repo root `clasp push` (uses
+`.clasp.json`, which is not committed because it points at one person's script; `.claspignore`
+keeps `forecast.js` out because `Forecast.gs` is its copy). After pushing, publish a new version
+of the deployment so the web app uses the new code.
 
 `dev/server.js` runs the real `backend/*.gs` files in Node against a fake spreadsheet
 (`dev/fake-apps-script.js`, data saved in `dev/data.json`), so you can try changes without Google.

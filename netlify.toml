@@ -1,0 +1,7 @@
+# Netlify settings (read automatically from the repo).
+[build]
+  publish = "frontend"
+  command = ""
+  # Only publish when something in frontend/ changed. Commits that only touch the backend,
+  # tests or docs are skipped, so they don't use Netlify deploy credits.
+  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- frontend/"

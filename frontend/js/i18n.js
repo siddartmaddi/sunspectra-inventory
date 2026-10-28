@@ -97,6 +97,8 @@ const en = {
   'fc.projected': 'Projected stock',
 
   'nav.reorder': 'Reorder',
+  'banner.urgent': '{n} product(s) need ordering now ({out} out of stock).',
+  'banner.view': 'View reorder plan →',
   'ro.title': 'Reorder plan',
   'ro.subtitle': 'Products to order now, with a suggested quantity. Change any quantity before exporting.',
   'ro.includeLow': 'Also show products running low',

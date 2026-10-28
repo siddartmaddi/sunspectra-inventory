@@ -48,6 +48,7 @@ async function route() {
   if (!found) { location.hash = '#/'; return; }
 
   renderNav(found.nav);
+  if (lastBoot) updateBanner(lastBoot); // re-translate after a language switch
   const id = ++renderId;
   app.innerHTML = loadingHtml();
   try {
@@ -134,6 +135,23 @@ document.getElementById('menu-btn').addEventListener('click', (e) => {
   nav.classList.toggle('open');
   e.currentTarget.setAttribute('aria-expanded', nav.classList.contains('open'));
 });
+
+/**
+ * Red banner on every page with the number of urgent products (out of stock or
+ * reorder now). Updated whenever fresh data arrives from the server.
+ */
+function updateBanner(boot) {
+  const banner = document.getElementById('banner');
+  const active = new Set(boot.products.filter((p) => p.active).map((p) => p.sku));
+  const urgent = boot.summary.filter((s) => active.has(s.sku) && (s.status === 'OUT' || s.status === 'REORDER NOW'));
+  const out = urgent.filter((s) => s.status === 'OUT').length;
+  if (!urgent.length || !isLoggedIn()) { banner.classList.add('hidden'); return; }
+  banner.innerHTML = `<span>⚠ ${esc(t('banner.urgent', { n: urgent.length, out }))}</span>
+    <a href="#/reorder">${esc(t('banner.view'))}</a>`;
+  banner.classList.remove('hidden');
+}
+let lastBoot = null;
+window.addEventListener('bootstrap', (e) => { lastBoot = e.detail; updateBanner(lastBoot); });
 
 window.addEventListener('hashchange', route);
 window.addEventListener('auth-lost', route);

@@ -29,8 +29,8 @@ Done:
 - Phase 0: git, .gitignore, CLAUDE.md.
 - Phase 1: setup(), API with access key + LockService + CacheService, products add/edit/deactivate, multi-line movement form (negative-stock block, typo warning), history with filters/CSV/reverse, settings + suppliers page, dashboard with current stock. API tests in `tests/api.test.js`. Checked in the browser (desktop + 375px).
 - Phase 2: `backend/forecast.js` (weighted average with 21-day half-life, simple average under 30 days, low-data flag under 14, safety stock, reorder point, cover, stockout/reorder-by dates, suggested qty rounded to MOQ, status). 20 unit tests in `tests/forecast.test.js`. Dashboard KPIs + Needs attention + 2 charts, product page forecast with plain-words explanation + stock and forecast charts, Reorder page with editable qty and CSV.
+- Phase 3: `backend/Alerts.gs`: `dailyAlertJob()` (one summary email: Out of stock / Reorder now / Running low; AlertLog; 3-day repeat rule unless status worsens), `installTriggers()` (no duplicates), `previewAlertEmail()`. New setting `app_url` for the email link. Red banner on every page with the urgent count. Tests in `tests/alerts.test.js`.
 
 Next:
-- Phase 3: daily email alerts + in-app banner.
 - Phase 4: stock counts, CSV import with name mapping, reports, Spanish.
 - Then: sample data loader polish, README.

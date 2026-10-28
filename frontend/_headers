@@ -1,0 +1,4 @@
+# Cloudflare Pages: always check for a newer version of the app files,
+# so everyone gets updates right after a deploy.
+/*
+  Cache-Control: no-cache

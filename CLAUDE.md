@@ -33,6 +33,9 @@ Done:
 - Phase 2: `backend/forecast.js` (weighted average with 21-day half-life, simple average under 30 days, low-data flag under 14, safety stock, reorder point, cover, stockout/reorder-by dates, suggested qty rounded to MOQ, status). 20 unit tests in `tests/forecast.test.js`. Dashboard KPIs + Needs attention + 2 charts, product page forecast with plain-words explanation + stock and forecast charts, Reorder page with editable qty and CSV.
 - Phase 3: `backend/Alerts.gs`: `dailyAlertJob()` (one summary email: Out of stock / Reorder now / Running low; AlertLog; 3-day repeat rule unless status worsens), `installTriggers()` (no duplicates), `previewAlertEmail()`. New setting `app_url` for the email link. Red banner on every page with the urgent count. Tests in `tests/alerts.test.js`.
 - Phase 4: `Counts.gs` (saveCount_ uses stock at end of count date, ADJUSTMENT "Count adjustment" with reference = count_id), `Import.gs` (dry run, per-row errors, unknown names, NameMap tab, batches of 300 from the browser, all-or-nothing per batch), `Reports.gs` (one getReport call). Screens: Counts, Import (handles `;` CSV and DD/MM/YYYY), Reports with CSV export. Full Spanish dictionary (test checks key parity). Sample data includes two counts.
+- README (non-developer setup: Sheet, pasting .gs files, ACCESS_KEY, deploy, triggers, config.js, Cloudflare Pages; troubleshooting; future ideas). `frontend/_headers` sets Cache-Control: no-cache.
 
-Next:
-- README for the client (setup, deploy, troubleshooting, future ideas), Cloudflare `_headers` so browsers don't keep old JS.
+Next (not started, needs the client):
+- Real deployment on the client's Google account and Cloudflare (README steps 1-9).
+- Replace estimated unit costs, lead times and batch sizes with real ones.
+- Future ideas are listed in README section 6.

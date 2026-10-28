@@ -1,0 +1,12 @@
+# macOS
+.DS_Store
+
+# Local development data written by dev/server.js (fake Google Sheet)
+dev/data.json
+
+# Editors
+.vscode/
+.idea/
+
+# Node (only used for tests and the local dev server; the site itself needs no npm)
+node_modules/

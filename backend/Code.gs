@@ -20,7 +20,11 @@ var ACTIONS = {
   upsertProduct:    ['upsertProduct_', true],
   setProductActive: ['setProductActive_', true],
   upsertSupplier:   ['upsertSupplier_', true],
-  updateSettings:   ['updateSettings_', true]
+  updateSettings:   ['updateSettings_', true],
+  saveCount:        ['saveCount_', true],
+  listCounts:       ['listCounts_', false],
+  importRows:       ['importRows_', true],
+  getReport:        ['getReport_', false]
 };
 
 /** A GET just says the API is alive (handy to test the deployment URL in a browser). */

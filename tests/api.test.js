@@ -140,3 +140,59 @@ test('sample data loads and can be cleared without touching products', () => {
   assert.equal(after.products.length, 33);
   assert.ok(after.summary.every((s) => s.on_hand === 0));
 });
+
+test('a count records system qty and variance, and adds an adjustment only when different', () => {
+  const { api } = freshBackend();
+  api('upsertProduct', { is_new: true, product: { sku: 'ST-TEST', name: 'Test stick', category: 'Sunscreen Stick', lead_time_days: 21 } });
+  api('addMovements', { date: '2026-10-01', type: 'OPENING', channel: 'INTERNAL', lines: [{ sku: 'ST-TEST', qty: 8 }] });
+  const res = api('saveCount', { date: '2026-10-05', lines: [{ sku: 'LB-TEST', counted_qty: 17 }, { sku: 'ST-TEST', counted_qty: 8 }] });
+  assert.equal(res.ok, true, res.error);
+  assert.equal(res.data.adjusted, 1);
+  const c = res.data.counts.find((x) => x.sku === 'LB-TEST');
+  assert.deepEqual([c.system_qty, c.counted_qty, c.variance], [20, 17, -3]);
+  assert.equal(onHand(api, 'LB-TEST'), 17);
+  const adj = api('listMovements', { type: 'ADJUSTMENT' }).data.movements[0];
+  assert.equal(adj.note, 'Count adjustment');
+  assert.equal(adj.qty, -3);
+  assert.equal(api('saveCount', { date: '2026-10-05', lines: [{ sku: 'LB-TEST', counted_qty: -1 }] }).ok, false);
+});
+
+test('import: dry run reports row errors and unknown names; mappings are remembered', () => {
+  const { api } = freshBackend();
+  const rows = [
+    { date: '2026-09-01', sku: 'LB-TEST', type: 'SALE', qty: '2' },
+    { date: '2026-09-31', product_name: 'Bálsamo de prueba', type: 'SALE', qty: 'two' }
+  ];
+  const dry = api('importRows', { kind: 'movements', rows, dry_run: true }).data;
+  assert.equal(dry.imported, 0);
+  assert.equal(dry.errors.length, 1);
+  assert.equal(dry.errors[0].row, 3);
+  assert.equal(dry.errors[0].messages.length, 3);
+  assert.deepEqual(dry.unknown_names, ['Bálsamo de prueba']);
+
+  rows[1] = { date: '2026-09-02', product_name: 'Bálsamo de prueba', type: 'SALE', qty: '3' };
+  const done = api('importRows', { kind: 'movements', rows, new_mappings: [{ source_name: 'Bálsamo de prueba', sku: 'LB-TEST' }] }).data;
+  assert.equal(done.imported, 2);
+  assert.equal(onHand(api, 'LB-TEST'), 15);
+  // Next time the same name (different spacing/case) is recognised without a mapping.
+  const again = api('importRows', { kind: 'opening', rows: [{ date: '2026-09-01', product_name: '  bálsamo  de prueba ', qty: '1' }], dry_run: true }).data;
+  assert.deepEqual(again.errors, []);
+});
+
+test('import: nothing is written when one row is bad', () => {
+  const { api } = freshBackend();
+  const res = api('importRows', { kind: 'opening', rows: [{ date: '2026-09-01', sku: 'LB-TEST', qty: '5' }, { date: '2026-09-01', sku: 'NOPE', qty: '5' }] }).data;
+  assert.equal(res.imported, 0);
+  assert.equal(onHand(api, 'LB-TEST'), 20);
+});
+
+test('reports return all sections', () => {
+  const backend = loadBackend();
+  backend.loadSampleData();
+  const r = callApi(backend, { key: 'dev-key', user: 'T', action: 'getReport', payload: { top_days: 30 } }).data;
+  assert.ok(r.sales_by_month.length > 0);
+  assert.ok(r.top_sellers.length > 0);
+  assert.deepEqual(r.slow_movers.map((s) => s.sku).sort(), ['KIT-PALETTE', 'MU-BLUSH']);
+  assert.ok(r.value_by_category.length > 0);
+  assert.ok(r.count_variance.some((v) => v.sku === 'SK-LUMINA' && v.total_variance === -3));
+});

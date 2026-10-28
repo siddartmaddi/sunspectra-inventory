@@ -31,7 +31,8 @@ function buildBootstrap_() {
     suppliers: readTable_('Suppliers').map(stripRow_),
     summary: buildSummary_(products, movements, today, settings),
     sales: salesStats_(movements, today),
-    customers: distinctCustomers_(movements)
+    customers: distinctCustomers_(movements),
+    name_map: readTable_('NameMap').map(stripRow_)
   };
 }
 

@@ -152,8 +152,23 @@ function loadSampleData() {
   }
   var rows = generateSampleMovements_(todayISO_(), 90);
   appendRows_('Movements', rows);
+  addSampleCounts_();
   clearCache_();
   Logger.log('Loaded ' + rows.length + ' sample movements.');
+}
+
+/** Two sample stock counts with a few small differences, so the Counts screens have history. */
+function addSampleCounts_() {
+  var today = todayISO_();
+  [[-35, { 'LB-CORAL': -2, 'LB-AURA': 0, 'ST-CLEAR': -1, 'SK-ALOE': 0, 'OP-GREEN': 1 }],
+   [-8, { 'LB-CORAL': 0, 'LB-AURA': -1, 'ST-CLEAR': 0, 'SK-LUMINA': -3, 'MU-PALETTE': 0 }]].forEach(function (count) {
+    var date = addDaysISO_(today, count[0]);
+    var stock = stockBySku(readTable_('Movements').filter(function (m) { return m.date <= date; }));
+    var lines = Object.keys(count[1]).map(function (sku) {
+      return { sku: sku, counted_qty: Math.max(0, (stock[sku] || 0) + count[1][sku]) };
+    });
+    saveCount_({ date: date, lines: lines }, { user: SAMPLE_USER });
+  });
 }
 
 /** Deletes every movement, count and alert entered by the sample loader. */

@@ -1,0 +1,2 @@
+sku,name,category,unit,unit_cost,retail_price,wholesale_price,supplier_id,lead_time_days,min_order_qty,safety_stock_override,reorder_point_override,target_cover_days
+LB-EXAMPLE,Lip Balm Example SPF30 12 g,Lip Balm,unit,2.10,6.99,,SUP-INHOUSE,10,60,,,60

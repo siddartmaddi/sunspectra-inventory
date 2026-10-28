@@ -1,0 +1,5 @@
+date,sku,product_name,type,qty,channel,customer,reference,note
+2026-09-15,LB-CORAL,,SALE,12,B2B2C,Surf Shop Tamarindo,INV-1001,
+2026-09-16,,Bálsamo Coral,SALE,2,B2C,Instagram,,Name from a sales file: map it once
+2026-09-20,ST-L1V,,PRODUCTION,80,INTERNAL,,BATCH-77,
+2026-09-21,ST-L1V,,DAMAGED,1,INTERNAL,,,Broken cap

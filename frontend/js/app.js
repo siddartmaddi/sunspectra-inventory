@@ -7,6 +7,9 @@ import * as products from './products.js';
 import * as movements from './movements.js';
 import * as settings from './settings.js';
 import * as reorder from './reorder.js';
+import * as counts from './counts.js';
+import * as reports from './reports.js';
+import * as importPage from './import.js';
 
 // Each route: URL pattern -> page module (with a render(container, params) function).
 const ROUTES = [
@@ -16,6 +19,9 @@ const ROUTES = [
   { path: /^\/products$/, page: products, nav: 'products' },
   { path: /^\/products\/(.+)$/, page: products, nav: 'products', params: (m) => ({ sku: decodeURIComponent(m[1]) }) },
   { path: /^\/reorder$/, page: reorder, nav: 'reorder' },
+  { path: /^\/counts$/, page: counts, nav: 'counts' },
+  { path: /^\/reports$/, page: reports, nav: 'reports' },
+  { path: /^\/import$/, page: importPage, nav: 'import' },
   { path: /^\/settings$/, page: settings, nav: 'settings' }
 ];
 
@@ -24,7 +30,10 @@ const NAV = [
   ['record', '#/record'],
   ['history', '#/history'],
   ['reorder', '#/reorder'],
+  ['counts', '#/counts'],
   ['products', '#/products'],
+  ['reports', '#/reports'],
+  ['import', '#/import'],
   ['settings', '#/settings']
 ];
 

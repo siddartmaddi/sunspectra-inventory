@@ -4,9 +4,9 @@ About 15 minutes. She needs a Google account (Gmail) and a laptop. The Google sc
 different depending on language or account type, so use the names in **bold** as a guide.
 
 ## Before the call (Siddart)
-1. Open the SunSpectra Inventory Sheet.
-2. Click **Share** (top right), type her Gmail address, set **Viewer**, click **Send**.
-3. Ask her to open the email, or Google Drive → **Shared with me**, and have it open before the call.
+- Open the SunSpectra Inventory Sheet.
+- Click **Share** (top right), type her Gmail address, set **Viewer**, click **Send**.
+- Ask her to open the email, or Google Drive → **Shared with me**, and have it open before the call.
 
 ## Part 1: make her own copy of the Sheet
 1. On the Sheet, click **File → Make a copy**.

@@ -1,123 +1,118 @@
-# Handing SunSpectra Inventory over to the client
+# SunSpectra Inventory: complete handover guide
 
-Everything the app depends on currently lives on **Siddart's accounts**. This is the full list of
-what to move or change. Nothing secret is stored in the repo (the access key lives only in Apps
-Script), so the repo itself can be handed over as it is.
+How to move the app from Siddart's accounts to the client, step by step. Steps are numbered from 1 to
+the end so they can be referred to on a call. Each step says who does it:
+**[Siddart]**, **[Client]** or **[Claude]** (the assistant working with Siddart on this Mac).
+Google screens can look slightly different by language or account type, so use the names in bold as a guide.
 
-Legend: **[Me]** = Claude can do it from Siddart's Mac once the needed access exists.
-**[Client]** = must be done by the client, signed in to their own account (permission screens,
-passwords and "Run" approvals can't be done for them).
+## What is handed over
 
-## What lives where today
+Today everything runs on Siddart's accounts:
+- **Google Sheet + Apps Script:** the data, the API, the daily email and the access key. This always moves to the client.
+- **Website on Netlify** (currently dainty-crepe-a910be.netlify.app): what people open.
+- **GitHub repo** (siddartmaddi/sunspectra-inventory): the code that Netlify publishes.
+- **frontend/config.js:** the one line that connects the website to the Google script.
 
-| Piece | Today | Where it is referenced |
-|---|---|---|
-| Google Sheet + Apps Script (the data and the API) | Siddart's Google account (maddisiddart@gmail.com) | `frontend/config.js` (web app URL) |
-| Access key | `ACCESS_KEY` in that script's Script Properties | typed on the app's sign-in screen |
-| Daily email trigger | created by Siddart in that script | Apps Script → Triggers |
-| Website | Netlify site `dainty-crepe-a910be` on Siddart's Netlify | **Settings → App address** (link in emails) |
-| Code | GitHub repo `siddartmaddi/sunspectra-inventory` | Netlify deploys from it |
-| `clasp` (uploads backend code from the Mac) | logged in as Siddart; `.clasp.json` (not in git) points at Siddart's script | only on Siddart's Mac |
+Choose before starting:
+- **Path A, Siddart keeps hosting:** only Google moves. GitHub and Netlify stay with Siddart, who stays responsible for website updates. Skip Part 4B.
+- **Path B, full handover:** GitHub and Netlify move to the client too. Skip Part 4A.
 
-## Recommended order
+Nothing secret is stored in the repo (the access key lives only in Apps Script), so the repo can be handed over as it is.
 
-### 1. GitHub: give the client the repo
-- **[Client]** Create a free GitHub account (or use theirs).
-- **[Siddart]** Repo → Settings → Danger Zone → **Transfer ownership** to the client's username. The
-  client accepts by email. Then the client adds Siddart as a **collaborator** (Settings →
-  Collaborators) so updates can still be pushed.
-- Easier alternative: keep the repo with Siddart and only add the client as a collaborator.
-- **[Me]** After a transfer, repoint the local git remote and check that pushing still works.
+## Part 1: Before you start
+1. **[Siddart]** Decide Path A or B and tell the client what to prepare: a Gmail account and a laptop. For Path B also a GitHub username (free account) and a Netlify sign-up. Allow about 30 minutes for Path A, 60 for Path B.
+2. **[Siddart]** Open the SunSpectra Inventory Sheet, click **Share** (top right), type her Gmail address, set **Viewer**, click **Send**.
+3. **[Client]** Open the email, or Google Drive and **Shared with me**, and have the Sheet open.
 
-### 2. Google: client's own Sheet, script, key and trigger
-Details are in README "Moving the app to another Google account". Summary:
-1. **[Siddart]** Share the current Sheet with the client (Viewer is enough).
-2. **[Client]** Open it → **File → Make a copy**. The copy has all data and the script code and is
-   owned by the client. (Copies get a *new* script and a *new* web app URL.)
-3. **[Client]** In the copy: **Extensions → Apps Script**, then:
-   - Run **setup** (safe to repeat), approve permissions
-     (**Advanced → Go to SunSpectra Inventory → Allow**).
-   - Set a **new `ACCESS_KEY`**: Project Settings → Script Properties. Script properties and
-     triggers do not come over with a copy, so always set them again.
-   - **Deploy → New deployment → Web app**: Execute as **Me**, access **Anyone**. Copy the URL
-     (ends in `/exec`).
-   - Run **installTriggers** (daily email).
-   - Open the URL in a browser: it should say `SunSpectra inventory API is running`.
-4. **[Client]** Run **clearSampleData** (removes only the made-up movements and counts and the
-   alert log; products and suppliers stay). Then look through **Movements** and **Counts** for
-   leftover test entries (anything entered by "Tester" or by Siddart while trying things) and
-   remove them from the Sheet with the app's Reverse, or ask Claude to help.
+## Part 2: The client's own Google copy (always)
+4. **[Client]** On the Sheet, click **File** and **Make a copy**.
+5. **[Client]** In the box, Name: **SunSpectra Inventory**, click **Make a copy**. A new tab opens: this copy is owned by her. Check that her account picture is top right. Everything from here happens in this copy.
+6. **[Client]** Click **Extensions** and **Apps Script**. A code editor opens in a new tab.
+7. **[Client]** In the left list ("Files"), click **Setup.gs**.
+8. **[Client]** In the top bar, open the function dropdown, choose **setup**, click **Run**.
+9. **[Client]** A box says **Authorization required**. Click **Review permissions** and choose her account.
+10. **[Client]** A warning says **Google hasn't verified this app**. This is expected: it is her own script. Click **Advanced**, then **Go to SunSpectra Inventory (unsafe)**, then **Allow**.
+11. **[Client]** At the bottom, the log should show **Execution completed**. A red error means stop and take a screenshot.
+12. **[Client]** On the left bar, click the **gear icon (Project Settings)**.
+13. **[Client]** Scroll to **Script Properties**, click **Add script property**. Property: `ACCESS_KEY`. Value: a long phrase only she chooses. Click **Save script properties**. She gives the key to Siddart privately, not in a group chat. Script properties and triggers do not come over with a copy, so this step is always needed.
+14. **[Client]** On the left bar, click the **< > icon (Editor)** to go back to the code.
+15. **[Client]** Click the blue **Deploy** button (top right) and **New deployment**.
+16. **[Client]** Click the **gear icon** next to "Select type" and choose **Web app**.
+17. **[Client]** Description: `v1`. **Execute as: Me** (her email). **Who has access: Anyone**. (The access key is what protects the data.)
+18. **[Client]** Click **Deploy**. If asked to authorize again, repeat steps 9 and 10.
+19. **[Client]** Click **Copy** next to **Web app URL** (it ends in `/exec`) and send it to Siddart.
+20. **[Client]** Test: paste the URL in a new browser tab. It should say `{"ok":true,"data":{"status":"SunSpectra inventory API is running"}}`.
+21. **[Client]** In the code editor, click **Alerts.gs**, choose **installTriggers**, click **Run**. Approve any new permission box the same way (steps 9 and 10). This schedules the daily email.
+22. **[Client]** Click **Setup.gs**, choose **clearSampleData**, click **Run**. It removes only the made-up movements and counts. Products and suppliers stay.
 
-Note: the daily email is sent from the account that owns the script, so it will come from the
-client's Gmail.
+## Part 3: Connect the website to her script (always)
+23. **[Siddart]** Send Claude the new Web app URL.
+24. **[Claude]** Replace `API_URL` in `frontend/config.js` with the new URL, commit and push. This is the only code change. The website republishes in about a minute (Path A: on Siddart's Netlify. Path B: the client's Netlify picks it up when she creates it in step 36).
+25. **[Siddart]** Path A: open the website in a private window (Path B: do this after step 37). Sign in with a name and the client's new key. If the dashboard loads, the connection works. The old key must now be refused here.
 
-### 3. Website points to the new backend
-- **[Me]** Replace `API_URL` in `frontend/config.js` with the client's new `/exec` URL, commit and
-  push (needs the URL from step 2). This is the only code change.
-- **[Me]** Check the live API and the site afterwards.
+## Part 4A: Path A, Siddart keeps hosting
+26. **[Siddart]** Leave GitHub and Netlify as they are. In Netlify, check **Site configuration**, **Access & security**, **Visitor access** is still **Public**, otherwise the client cannot open the site.
+27. **[Siddart]** Optional: **Site configuration**, **General**, **Change site name** for a nicer address such as `sunspectra-inventory.netlify.app`. The address changes, so do step 41 with the new one.
+28. **[Siddart]** Tell the client the website address and agree who pays attention to it: updates to screens or labels need Siddart (push to GitHub, Netlify publishes). The free Netlify plan has monthly deploy credits, so changes should be grouped.
 
-### 4. Netlify: site under the client's account
-- **Option A, transfer:** **[Siddart]** Site configuration → General → transfer the site to the
-  client's Netlify team (the client needs a Netlify account; if you can't find the option, use B).
-- **Option B, new site (recommended, 2 minutes):** **[Client]** Sign up at app.netlify.com with
-  GitHub → Add new site → Import an existing project → the repo → branch `main`, build command
-  empty, publish directory `frontend` (the repo's `netlify.toml` already says this). Then
-  Site configuration → **Access & security → Visitor access → Public** (otherwise only the client's
-  Netlify team can open it).
-- **[Client]** Optional: Site configuration → General → **Change site name**, so the address looks
-  like `sunspectra-inventory.netlify.app`. The address changes, so repeat step 5 after.
-- **[Siddart]** When the client's site works, delete or pause the old Netlify site.
-- Netlify's free plan has monthly deploy credits; `netlify.toml` skips deploys unless `frontend/`
-  changed. Cloudflare Pages (README step 8) is an alternative if credits run short.
+## Part 4B: Path B, GitHub and Netlify move too
+29. **[Client]** Create a free account at github.com (**Sign up**) and send Siddart the username.
+30. **[Siddart]** Open github.com/siddartmaddi/sunspectra-inventory, **Settings**, **General**, scroll to **Danger Zone**, click **Transfer ownership**, enter her username and the repo name, confirm.
+31. **[Client]** Open the email from GitHub about the transfer and accept it. The repo is now hers.
+32. **[Client]** In the repo, **Settings**, **Collaborators**, **Add people**, add `siddartmaddi` with write access, so Siddart and Claude can keep helping. Skip this if no further help is wanted.
+33. **[Claude]** Point the Mac's git at the new address (`git remote set-url origin ...`) and test a push (needs step 32). The old address forwards for a while.
+34. **[Client]** Go to app.netlify.com and **Sign up** with GitHub.
+35. **[Client]** Click **Add new site**, **Import an existing project**, **GitHub**, allow Netlify to read her repositories, pick **sunspectra-inventory**.
+36. **[Client]** Branch `main`, Base directory empty, Build command empty, Publish directory `frontend`. Click **Deploy**. (The repo's `netlify.toml` already says this.)
+37. **[Client]** **Site configuration**, **Access & security**, **Visitor access**: choose **Customize this project's visibility**, **Public**, applies to **Production and previews**, **Save**. Without this the site asks for a Netlify login.
+38. **[Client]** Optional: **Site configuration**, **General**, **Change site name**. Send Siddart the final website address.
+39. **[Siddart]** After Part 8 passes on her site, delete the old Netlify site (**Site configuration**, **General**, **Danger zone**, **Delete site**).
 
-### 5. Settings inside the app (copied from Siddart's Sheet, change them)
-**[Client]** Sign in with the new key, open **Settings**:
-- **Alert email(s)**: the client's address(es).
-- **App address**: the client's final website address (used for the link in the email).
-- **Company name**, **Alert hour** (default 7 am Costa Rica), service level and forecast settings
-  as wanted. If you change the alert hour later, run **installTriggers** again.
-- Suppliers: add real contact names, emails and phones.
+## Part 5: First sign-in and settings
+40. **[Client]** Open the website address, sign in with her name and the new access key. The name is saved next to every change she makes.
+41. **[Client]** Open **Settings**. Fill in **Company name**, **Alert email(s)** (several separated by commas), **Alert hour** (0 to 23, default 7, Costa Rica time) and **App address** (the final website address, used for the link in the daily email). Click **Save**. These values were copied from Siddart's Sheet, so change them.
+42. **[Client]** Further down in Settings, **Suppliers**: click **Edit** or **Add supplier** and enter real contact names, emails and phones.
+43. **[Client]** If the alert hour was changed, run **installTriggers** again (step 21).
+44. **[Client]** Optional test: in Apps Script, **Alerts.gs**, choose **previewAlertEmail**, **Run**, open the **Execution log** to read what the email would say. No email is sent on days with nothing to report.
 
-### 6. Real business numbers (the forecast depends on these)
-**[Client]** On **Products**, for every product replace the estimated values:
-- **Unit cost**: the sample list used ~30% of retail as a placeholder. Wrong costs mean a wrong
-  inventory value and wrong order costs.
-- **Lead time (days)** and **minimum order / batch size**: currently first guesses (7–30 days).
-- **Target cover (days)** (default 60), supplier, and anything else that differs. Check that the
-  three discontinued Opticks Powders stay inactive.
-- Load the real starting stock with **Import → Opening stock** (or **Record → Opening stock**),
-  then do a first **Counts** to confirm it matches the shelf.
-- Decide whether samples should count as demand (**Settings**, off by default).
+## Part 6: Real business numbers (the forecast depends on them)
+45. **[Client]** Open the Sheet's **Movements** and **Counts** tabs and check for leftover test rows (anything entered by "Tester" or Siddart while trying things). The simplest clean-up is to delete those rows in the Sheet once, now, before real data goes in. Never delete rows later: use **Reverse** in the app.
+46. **[Client]** **Products**, **Edit** each product: replace **Unit cost (USD)**. The sample list used 30% of the retail price as a placeholder, so inventory value and order costs are wrong until this is done.
+47. **[Client]** On each product also set **Lead time (days)**, **Minimum order / batch size** and **Target cover (days)** (default 60). The current values are first guesses.
+48. **[Client]** Tick **Show deactivated** and check that the three discontinued Opticks Powders are inactive.
+49. **[Client]** Load starting stock: **Import**, choose **Opening stock**, **Download template**, fill date, sku and qty, upload and **Import**. Or use **Record** with type **Opening stock**.
+50. **[Client]** Do a first **Counts**: count the shelf, type the numbers, **Save count**. Differences are fixed automatically.
+51. **[Client]** In **Settings**, decide whether **Count samples as demand in the forecast** (off by default).
 
-### 7. Keeping the app maintained afterwards
-- Website changes (`frontend/`): push to GitHub, Netlify publishes in about a minute.
-- Backend changes (`.gs` files) need to be uploaded and a new version of the web app published *by
-  the account that owns the script*. Today that is Siddart's login on this Mac; after the handoff
-  it would have to be the client's. Options: **[Client]** signs in to `clasp` on the Mac when a
-  change is needed (**[Me]** then creates a new `.clasp.json` for the client's script and runs
-  `clasp push` and a new deployment), or the client pastes updated files into Apps Script by hand
-  (README "Making changes later"). If the client wants Siddart to keep helping, they can share
-  the Sheet with Siddart as Editor.
-- **[Me]** After the handoff, update `CLAUDE.md` (deployment section) so it stops pointing at
-  Siddart's accounts.
+## Part 7: Clean up the old copy
+52. **[Siddart]** In Siddart's old Apps Script: **Deploy**, **Manage deployments**, **Archive** the web app deployment. After this the old URL stops answering.
+53. **[Siddart]** In the old script, click the **clock icon (Triggers)**, open the menu on the `dailyAlertJob` row, **Delete trigger**. Otherwise the old copy may keep sending emails.
+54. **[Siddart]** Keep the old Sheet as a backup or delete it in Google Drive (it holds the sample data).
+55. **[Claude]** Sign clasp out on the Mac (`clasp logout`) and remove the local `.clasp.json`, so the Mac no longer has access to Siddart's script.
+56. **[Claude]** Update the deployment section of `CLAUDE.md` so it no longer points at Siddart's accounts.
 
-### 8. Shut down the old copy
-**[Siddart]** In Siddart's old script: **Deploy → Manage deployments → Archive**, and delete the
-`dailyAlertJob` trigger (Triggers → clock icon). Otherwise the old copy keeps answering and may
-keep sending daily emails. Keep or delete the old Sheet; it still has the sample data. Optionally
-run `clasp logout` on the Mac.
-
-## Final check before telling the client it's live
-- [ ] Client's site address opens without a Netlify login.
-- [ ] Sign-in works with the client's **new** key; the **old** key no longer works.
+## Part 8: Final check
+- [ ] The website address opens without a Netlify login.
+- [ ] Sign-in works with the client's new key; the old key is refused.
 - [ ] Dashboard shows the client's real products and no sample movements.
-- [ ] Record a test sale, see stock drop, then **Reverse** it.
-- [ ] Settings: alert email and app address are the client's.
-- [ ] Run **previewAlertEmail** in Apps Script and read the log; confirm a trigger exists in
-      Triggers (one `dailyAlertJob`).
-- [ ] Costs, lead times and batch sizes are real (not the 30% placeholder).
-- [ ] Old script archived, old trigger deleted.
+- [ ] Record a test sale, see the stock drop, then **Reverse** it.
+- [ ] Settings show her alert email and the final website address.
+- [ ] In Apps Script, **Triggers** shows one `dailyAlertJob`, and the first email arrives from her Gmail.
+- [ ] Unit costs, lead times and batch sizes are real, not the placeholders.
+- [ ] Old deployment archived, old trigger deleted.
 
-## Not in the repo (needs a decision)
-`docs/SOP.pdf` is an untracked file in the project folder that this project did not create. It
-hasn't been committed; decide whether it belongs in the repo before the client gets access.
+## Part 9: Looking after it afterwards
+- **Website changes** (screens, labels, colors, Spanish text): push to GitHub and Netlify publishes in about a minute. Under Path A this is Siddart's account; under Path B the client's.
+- **Backend changes** (saving data, forecasts, emails): Google keeps running the old code until a new version is published by the account that owns the script, now the client. The simplest way: Siddart or Claude sends the changed `.gs` files, she pastes them into Apps Script and publishes with **Deploy**, **Manage deployments**, the **pencil icon**, **Version: New version**, **Deploy**. The URL stays the same.
+- **Costs:** Google, GitHub (private repo) and Netlify are used on free plans.
+- **Safety copy:** now and then, **File** and **Make a copy** of the Sheet in Google Drive.
+
+## If something goes wrong
+- **"Authorization required" keeps appearing:** she is not signed in as the owner of the copy. Check the account picture top right.
+- **Red error about a missing tab:** run **setup** again (step 8).
+- **The web app URL shows a Google sign-in page:** step 17 was not set to **Anyone**. Fix it in **Deploy**, **Manage deployments**, **pencil icon**, **Who has access: Anyone**, **Deploy**.
+- **The website says the access key is wrong:** check `ACCESS_KEY` in Project Settings, **Script Properties**. It is case-sensitive.
+- **The website asks for a Netlify login:** step 26 or 37, Visitor access must be **Public**.
+- **The website says it is not connected:** `config.js` still has the old URL (step 24).
+- **No daily email:** check Settings has an alert email, check **Triggers** has `dailyAlertJob`, check spam. Remember: nothing is sent on days with nothing new.
+- **The site shows an old version after an update:** reload with Cmd+Shift+R (Mac) or Ctrl+Shift+R (Windows).

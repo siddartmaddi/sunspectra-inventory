@@ -39,6 +39,6 @@ Done:
 
 Next:
 - Siddart: turn off Netlify visitor protection, set App address + alert email in Settings, run installTriggers.
-- Handoff to the client's Google account (README "Moving the app to another Google account").
+- Handoff to the client: full checklist in `HANDOFF.md` (Google copy + key + trigger, config.js URL, Netlify, GitHub, real costs). Update the deployment line above afterwards.
 - Replace estimated unit costs, lead times and batch sizes with real ones.
 - Future ideas are listed in README section 6.

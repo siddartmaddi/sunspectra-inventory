@@ -8,7 +8,19 @@ export function esc(value) {
 
 export function money(value) {
   const n = Number(value) || 0;
-  return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return (n < 0 ? '-' : '') + '$' + Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+/** Money without cents, for big dashboard numbers. */
+export function money0(value) {
+  const n = Number(value) || 0;
+  return (n < 0 ? '-' : '') + '$' + Math.abs(n).toLocaleString('en-US', { maximumFractionDigits: 0 });
+}
+
+/** 0.1234 -> "12%" (or "12.3%" with decimals = 1). null -> "–". */
+export function pct(value, decimals = 0) {
+  if (value === null || value === undefined || isNaN(value)) return '–';
+  return (value * 100).toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }) + '%';
 }
 
 export function num(value, decimals = 0) {
@@ -154,6 +166,71 @@ export function coverText(row) {
   return t('fc.days', { n: num(row.days_of_cover, row.days_of_cover < 10 ? 1 : 0) });
 }
 
+// ---- Dashboard tiles ----
+
+/**
+ * One KPI tile. `value` and `sub` lines are plain text (escaped here); `delta` and `spark` are
+ * ready-made HTML from deltaBadge() / sparkSlot() / sparkline().
+ */
+export function tile({ label, value, sub = [], cls = '', delta = '', spark = '' }) {
+  return `<div class="kpi ${cls}"><div class="label">${esc(label)}</div>
+    <div class="value">${esc(value)}</div>${delta ? `<div class="delta-row">${delta}</div>` : ''}
+    ${sub.filter(Boolean).map((line) => `<div class="sub">${esc(line)}</div>`).join('')}${spark && !spark.includes('spark-slot') ? `<div class="spark-slot">${spark}</div>` : spark}</div>`;
+}
+
+/** An empty spot in a tile that addSparklines() fills in once the monthly numbers arrive. */
+export function sparkSlot(name) {
+  return `<div class="spark-slot" data-spark="${esc(name)}"></div>`;
+}
+
+/** Tiny line chart (inline SVG) of a list of numbers; nulls are skipped. Empty if under 2 points. */
+export function sparkline(values) {
+  const points = values.map((v, i) => [i, v]).filter(([, v]) => v !== null && v !== undefined && !isNaN(v));
+  if (points.length < 2) return '';
+  const w = 96, h = 28, pad = 3;
+  const ys = points.map(([, v]) => v);
+  const min = Math.min(...ys), max = Math.max(...ys);
+  const span = max - min || 1;
+  const x = (i) => pad + (i / (values.length - 1)) * (w - 2 * pad);
+  const y = (v) => h - pad - ((v - min) / span) * (h - 2 * pad);
+  const path = points.map(([i, v], k) => `${k ? 'L' : 'M'}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join(' ');
+  const [lastI, lastV] = points[points.length - 1];
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" aria-hidden="true">
+    <path d="${path}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="${x(lastI).toFixed(1)}" cy="${y(lastV).toFixed(1)}" r="2.2" fill="currentColor"/></svg>`;
+}
+
+/** Fills every [data-spark="name"] slot inside `root` from {name: [numbers]}. */
+export function addSparklines(root, seriesByName) {
+  root.querySelectorAll('[data-spark]').forEach((slot) => {
+    const values = seriesByName[slot.dataset.spark];
+    if (values) slot.innerHTML = sparkline(values);
+  });
+}
+
+/**
+ * "▲ 12%" or "▼ 0.4 pts" compared with before. good = 'up' | 'down' | null decides the color
+ * (null = neutral gray). mode 'pts' is for rates that are already percentages.
+ */
+export function deltaBadge(current, previous, { good = 'up', mode = 'pct' } = {}) {
+  if (current === null || current === undefined || previous === null || previous === undefined) return '';
+  let change;
+  let label;
+  if (mode === 'pts') {
+    change = (current - previous) * 100;
+    label = Math.abs(change).toLocaleString('en-US', { maximumFractionDigits: 1 }) + ' pts';
+    if (Math.abs(change) < 0.05) return `<span class="delta flat">${esc(t('kpi.same'))}</span>`;
+  } else {
+    if (!previous) return '';
+    change = ((current - previous) / Math.abs(previous)) * 100;
+    label = Math.abs(change).toLocaleString('en-US', { maximumFractionDigits: 0 }) + '%';
+    if (Math.abs(change) < 0.5) return `<span class="delta flat">${esc(t('kpi.same'))}</span>`;
+  }
+  const up = change > 0;
+  const cls = good === null ? 'flat' : up === (good === 'up') ? 'good' : 'bad';
+  return `<span class="delta ${cls}">${up ? '▲' : '▼'} ${label}</span>`;
+}
+
 /** Lookup helpers for bootstrap data. */
 export function productMap(boot) {
   return Object.fromEntries(boot.products.map((p) => [p.sku, p]));
@@ -174,6 +251,8 @@ export function optionsHtml(options, selected, placeholder) {
 /** Keeps a chart reference per canvas so re-rendering a page doesn't stack charts. */
 const charts = new Map();
 export function drawChart(canvas, config) {
+  // The page may have changed (another tab opened) between asking for a chart and drawing it.
+  if (!canvas || !canvas.isConnected) return null;
   if (!window.Chart) {
     canvas.replaceWith(Object.assign(document.createElement('p'), { className: 'muted', textContent: t('common.noCharts') }));
     return null;

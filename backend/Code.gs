@@ -24,7 +24,8 @@ var ACTIONS = {
   saveCount:        ['saveCount_', true],
   listCounts:       ['listCounts_', false],
   importRows:       ['importRows_', true],
-  getReport:        ['getReport_', false]
+  getReport:        ['getReport_', false],
+  getKpis:          ['getKpis_', false]
 };
 
 /** A GET just says the API is alive (handy to test the deployment URL in a browser). */
@@ -100,5 +101,7 @@ function jsonOut_(obj) {
 var CACHE_KEY = 'bootstrap_v1';
 
 function clearCache_() {
-  CacheService.getScriptCache().remove(CACHE_KEY);
+  var cache = CacheService.getScriptCache();
+  cache.remove(CACHE_KEY);
+  KPI_PERIODS.forEach(function (days) { cache.remove(KPI_CACHE_PREFIX + days); });
 }

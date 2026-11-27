@@ -21,61 +21,50 @@ function buildBootstrap_() {
   var products = readTable_('Products').map(stripRow_);
   var movements = readTable_('Movements');
   var settings = getSettings_();
-
   var today = todayISO_();
+  var summary = buildSummary_(products, movements, today, settings);
 
   return {
     today: today,
     settings: settings,
     products: products,
     suppliers: readTable_('Suppliers').map(stripRow_),
-    summary: buildSummary_(products, movements, today, settings),
-    sales: salesStats_(movements, today),
+    summary: summary,
+    stock_kpis: computeStockKpis(products, summary, today, settings),
     customers: distinctCustomers_(movements),
     name_map: readTable_('NameMap').map(stripRow_)
   };
 }
 
 /**
- * One row per product: stock, value at cost, typical movement size (for the typo
- * warning) and the full forecast (see forecast.js / Forecast.gs).
+ * One row per product: stock, value at cost and retail, last sale date, typical movement size
+ * (for the typo warning) and the full forecast (see forecast.js / Forecast.gs).
  */
 function buildSummary_(products, movements, today, settings) {
   var forecasts = forecastAll(products, movements, today, settings);
   var bySku = groupBySku_(movements);
+  var lastSale = lastSaleBySku_(movements);
   return products.map(function (p) {
     var row = forecasts[p.sku];
+    var held = Math.max(row.on_hand, 0);
     row.typical_qty = typicalMovementSize(bySku[p.sku] || []);
-    row.value = Math.max(row.on_hand, 0) * (p.unit_cost || 0);
+    row.value = held * (p.unit_cost || 0);
+    row.value_retail = held * (p.retail_price || 0);
+    row.last_sale = lastSale[p.sku] || '';
     return row;
   });
 }
 
-/**
- * Small sales summaries for the dashboard charts, so the browser doesn't need
- * every movement: units sold per month and channel (last 12 months) and the
- * top sellers of the last 30 days. Reversed sales are left out.
- */
-function salesStats_(movements, today) {
+/** Date of the most recent sale of each product (reversed sales don't count). */
+function lastSaleBySku_(movements) {
   var reversed = {};
   movements.forEach(function (m) { if (m.reverses_id) reversed[m.reverses_id] = true; });
-  var firstMonth = addDays(today, -365).slice(0, 7);
-  var since30 = addDays(today, -30);
-  var byMonth = {};   // 'YYYY-MM' -> {channel: units}
-  var last30 = {};    // sku -> units
+  var last = {};
   movements.forEach(function (m) {
     if (m.type !== 'SALE' || m.reverses_id || reversed[m.movement_id]) return;
-    var units = -m.qty;
-    var month = m.date.slice(0, 7);
-    if (month >= firstMonth) {
-      var row = byMonth[month] = byMonth[month] || {};
-      row[m.channel || 'B2C'] = (row[m.channel || 'B2C'] || 0) + units;
-    }
-    if (m.date > since30) last30[m.sku] = (last30[m.sku] || 0) + units;
+    if (!last[m.sku] || m.date > last[m.sku]) last[m.sku] = m.date;
   });
-  var top = Object.keys(last30).map(function (sku) { return { sku: sku, units: last30[sku] }; })
-    .sort(function (a, b) { return b.units - a.units; }).slice(0, 10);
-  return { by_month: byMonth, top_30_days: top };
+  return last;
 }
 
 /** Product page: the product's movements and counts (oldest first). */

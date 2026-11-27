@@ -47,6 +47,7 @@ Nothing here costs money and nothing needs to be installed to use the app.
    | `backend/Counts.gs`       | `Counts`            |
    | `backend/Import.gs`       | `Import`            |
    | `backend/Reports.gs`      | `Reports`           |
+   | `backend/Kpis.gs`         | `Kpis`              |
    | `backend/Alerts.gs`       | `Alerts`            |
    | `backend/Setup.gs`        | `Setup`             |
    | `backend/Forecast.gs`     | `Forecast`          |
@@ -168,6 +169,14 @@ If you change the alert hour, run **installTriggers** again (it never creates du
 | Load old sales or a stock list | **Import** → download the template → fill it → upload |
 | Add or change a product | **Products** → **Add product** or **Edit** (deactivate instead of deleting) |
 | Change the email, alert hour or forecast settings | **Settings** |
+
+**What the Dashboard shows** (three tabs; arrows compare with the previous period, small charts show the last 12 months, and a * marks a month that is still in progress)
+
+- **Stock:** stock on hand, days of cover, stock-out risk (with the sales lost per day while products are out), reorder point and safety stock, overstock, slow movers, inventory value, the "Needs attention" list and stock by category.
+- **Sales:** units sold by month (by channel, category or product), estimated revenue and gross margin, top and bottom sellers, kit versus single-product mix, revenue share by channel, customer concentration and average B2B order size.
+- **Production & quality:** units produced, production versus sales, damage rate, sample / giveaway rate, count accuracy and shrinkage.
+
+A tile or chart only appears when there is data for it (for example, count accuracy appears after the first stock count). Revenue and margin are **estimates**: the app does not record sale prices, so it uses the product's retail price for direct sales and the wholesale price for B2B and stores, minus the unit cost. Customer concentration only works when the Customer box is filled in on B2B and store sales. A "How these numbers are calculated" box at the bottom of each tab explains every number.
 
 **Data checks on the Record form**
 
@@ -294,7 +303,7 @@ SPEC.md         original specification
 
 API: one POST endpoint, body `{ key, user, action, payload }`, sent as `text/plain` so browsers skip
 the CORS preflight that Apps Script can't answer. Answer: `{ ok, data }` or `{ ok: false, error }`.
-Actions: `getBootstrap`, `listMovements`, `getProductDetail`, `addMovements`, `reverseMovement`,
+Actions: `getBootstrap`, `getKpis`, `listMovements`, `getProductDetail`, `addMovements`, `reverseMovement`,
 `saveCount`, `listCounts`, `upsertProduct`, `setProductActive`, `upsertSupplier`, `updateSettings`,
 `importRows`, `getReport`.
 

@@ -77,6 +77,8 @@ export async function call(action, payload = {}) {
 
 // ---- Bootstrap data (products, settings, stock summary) shared by all pages ----
 let bootstrapData = null;
+// Dashboard trend data (sales, production, counts by month), one answer per period length.
+const kpiCache = new Map();
 
 /** Returns the cached bootstrap data, loading it from the server when needed. */
 export async function getBootstrap(force = false) {
@@ -87,8 +89,20 @@ export async function getBootstrap(force = false) {
   return bootstrapData;
 }
 
+/** Dashboard sales / production / counts numbers for the last 30, 90 or 365 days. */
+export function getKpis(days) {
+  if (!kpiCache.has(days)) {
+    // Keep the promise so two callers at once share one request; forget it if it fails.
+    kpiCache.set(days, call('getKpis', { days }).catch((err) => { kpiCache.delete(days); throw err; }));
+  }
+  return kpiCache.get(days);
+}
+
 /** Call after any save so the next page shows fresh numbers. */
-export function invalidateBootstrap() { bootstrapData = null; }
+export function invalidateBootstrap() {
+  bootstrapData = null;
+  kpiCache.clear();
+}
 
 /** Runs a write action, then marks the cached data as stale. */
 export async function write(action, payload) {

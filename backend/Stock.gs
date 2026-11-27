@@ -31,6 +31,7 @@ function buildBootstrap_() {
     suppliers: readTable_('Suppliers').map(stripRow_),
     summary: summary,
     stock_kpis: computeStockKpis(products, summary, today, settings),
+    sales: salesStats_(movements, today),
     customers: distinctCustomers_(movements),
     name_map: readTable_('NameMap').map(stripRow_)
   };
@@ -53,6 +54,33 @@ function buildSummary_(products, movements, today, settings) {
     row.last_sale = lastSale[p.sku] || '';
     return row;
   });
+}
+
+/**
+ * Small sales summary (units per month and channel, top sellers of the last 30 days). The old
+ * dashboard read this; the current one uses getKpis instead. Kept so a browser that still has the
+ * old website open keeps working while a new version of the site is being published.
+ */
+function salesStats_(movements, today) {
+  var reversed = {};
+  movements.forEach(function (m) { if (m.reverses_id) reversed[m.reverses_id] = true; });
+  var firstMonth = addDays(today, -365).slice(0, 7);
+  var since30 = addDays(today, -30);
+  var byMonth = {};   // 'YYYY-MM' -> {channel: units}
+  var last30 = {};    // sku -> units
+  movements.forEach(function (m) {
+    if (m.type !== 'SALE' || m.reverses_id || reversed[m.movement_id]) return;
+    var units = -m.qty;
+    var month = m.date.slice(0, 7);
+    if (month >= firstMonth) {
+      var row = byMonth[month] = byMonth[month] || {};
+      row[m.channel || 'B2C'] = (row[m.channel || 'B2C'] || 0) + units;
+    }
+    if (m.date > since30) last30[m.sku] = (last30[m.sku] || 0) + units;
+  });
+  var top = Object.keys(last30).map(function (sku) { return { sku: sku, units: last30[sku] }; })
+    .sort(function (a, b) { return b.units - a.units; }).slice(0, 10);
+  return { by_month: byMonth, top_30_days: top };
 }
 
 /** Date of the most recent sale of each product (reversed sales don't count). */

@@ -240,7 +240,7 @@ test('getKpis API: validates the period, is included in sample data, and refresh
   assert.equal(api('getKpis', { days: 45 }).ok, false);
   const boot = api('getBootstrap').data;
   assert.ok(boot.stock_kpis.units > 0);
-  assert.equal(boot.sales, undefined, 'the old dashboard sales block is gone');
+  assert.ok(boot.sales && boot.sales.by_month, 'old websites that still read boot.sales keep working');
   assert.ok(boot.summary.every((r) => 'last_sale' in r && 'value_retail' in r));
 
   const before = api('getKpis', { days: 90 }).data;

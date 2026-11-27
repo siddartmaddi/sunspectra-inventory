@@ -1,7 +1,7 @@
 # Netlify settings (read automatically from the repo).
+# Every push to main is published. (A rule that skipped pushes without frontend changes was
+# removed because it also skipped a real dashboard update; the free plan has limited deploy
+# credits, so group changes into few pushes.)
 [build]
   publish = "frontend"
   command = ""
-  # Only publish when something in frontend/ changed. Commits that only touch the backend,
-  # tests or docs are skipped, so they don't use Netlify deploy credits.
-  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- frontend/"
